@@ -3,13 +3,13 @@ use nom::{
     branch::alt,
     bytes::complete::{tag, take_while1},
     character::complete::{char, digit1, multispace0},
-    combinator::{map, map_res, opt},
+    combinator::{map, map_res, opt, recognize},
     multi::many0,
     sequence::{delimited, pair, preceded, tuple},
     IResult,
 };
 use petgraph::graph::DiGraph;
-use std::{collections::HashMap, error::Error, fs::File, io::BufReader};
+use std::{collections::HashMap, error::Error, fs::File, io::BufReader, str::FromStr};
 
 use serde_json::Value;
 
@@ -46,7 +46,8 @@ pub fn constraints_from_json(json_path: &str) -> Result<Program, Box<dyn Error>>
         let mut cs: Vec<Constraint> = Vec::new();
         for constraint in constraints_str {
             let constraint = constraint.as_str().unwrap();
-            let constraint = parse_constraint(constraint).unwrap().1;
+            let (str, constraint) = parse_constraint(constraint).unwrap();
+            assert!(str.len() == 0); // no reaming data
             cs.push(constraint);
         }
         // insert to proc constrains
@@ -70,6 +71,14 @@ pub fn constraints_from_json(json_path: &str) -> Result<Program, Box<dyn Error>>
 // )
 // node_pattern = re.compile(r"(\S+)\.([⊕⊖])")
 
+fn parse_i32(input: &str) -> IResult<&str, i32> {
+    let (i, number) = map_res(recognize(preceded(opt(tag("-")), digit1)), |s| {
+        i32::from_str(s)
+    })(input)?;
+
+    Ok((i, number))
+}
+
 fn is_not_whitespace_or_dot(c: char) -> bool {
     !c.is_whitespace() && c != '.'
 }
@@ -88,17 +97,20 @@ fn parse_in_pattern(input: &str) -> IResult<&str, FieldLabel> {
 }
 
 fn parse_out_pattern(input: &str) -> IResult<&str, FieldLabel> {
-    map(
-        preceded(tag("out_"), map_res(digit1, |s: &str| s.parse::<u32>())),
-        FieldLabel::OutPattern,
-    )(input)
+    alt((
+        map(
+            preceded(tag("out_"), map_res(digit1, |s: &str| s.parse::<u32>())),
+            FieldLabel::OutPattern,
+        ),
+        map(tag("out"), |_| FieldLabel::OutPattern(0)),
+    ))(input)
 }
 
 fn parse_deref_pattern(input: &str) -> IResult<&str, FieldLabel> {
     map(
         tuple((
             preceded(tag("σ"), map_res(digit1, |s: &str| s.parse::<u32>())),
-            preceded(char('@'), map_res(digit1, |s: &str| s.parse::<i32>())),
+            preceded(char('@'), parse_i32),
             opt(delimited(
                 tag("*["),
                 alt((
@@ -110,7 +122,7 @@ fn parse_deref_pattern(input: &str) -> IResult<&str, FieldLabel> {
             )),
         )),
         |(base, offset, bound)| FieldLabel::DerefPattern {
-            base,
+            size: base,
             offset,
             bound,
         },

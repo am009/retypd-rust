@@ -1,0 +1,47 @@
+{
+  "language": "ARM32",
+  "callgraph": {
+    "__wasm_call_dtors": [
+      "dummy"
+    ],
+    "dummy": [],
+    "main": [],
+    "main_1": [
+      "main"
+    ],
+    "main_2": [
+      "main_1",
+      "__wasm_call_dtors"
+    ]
+  },
+  "constraints": {
+    "__wasm_call_dtors": [],
+    "dummy": [],
+    "main": [
+      "┬* <= v_0",
+      "v_0.load.σ4@0 <= v_1",
+      "v_2 <= v_3",
+      "v_4 <= v_1.store.σ4@-4",
+      "v_5 <= v_6",
+      "uint32 <= v_7",
+      "v_7 <= v_1.store.σ4@-8",
+      "v_8 <= v_9",
+      "uint32 <= v_10",
+      "v_10 <= v_1.store.σ4@-12",
+      "v_11 <= v_12",
+      "uint32 <= v_13",
+      "v_13 <= v_1.store.σ4@-16",
+      "uint32 <= v_14",
+      "v_14 <= main.out"
+    ],
+    "main_1": [
+      "v_15 <= main_1.out"
+    ],
+    "main_2": [
+      "main_2.in_0 <= main_1.in_0",
+      "main_2.in_1 <= main_1.in_1",
+      "v_18 <= main_2.out"
+    ]
+  },
+  "data_layout": "e-m:e-p:32:32-i64:64-n32:64-S128"
+}
