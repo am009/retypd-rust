@@ -4,6 +4,37 @@ use std::{collections::HashMap, fmt::Debug};
 use petgraph::graph::DiGraph;
 
 #[derive(PartialEq, Eq, Hash, Clone)]
+pub enum Variance {
+    Covariant,
+    Contravariant,
+}
+
+impl fmt::Display for Variance {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Variance::Covariant => write!(f, "⊕"),
+            Variance::Contravariant => write!(f, "⊖"),
+        }
+    }
+}
+
+impl Variance {
+    pub fn invert(&self) -> Variance {
+        match self {
+            Variance::Covariant => Variance::Contravariant,
+            Variance::Contravariant => Variance::Covariant,
+        }
+    }
+    pub fn combine(&self, other: &Variance) -> Variance {
+        if self == other {
+            Variance::Covariant
+        } else {
+            Variance::Contravariant
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Hash, Clone)]
 pub enum FieldLabel {
     InPattern(u32),
     OutPattern(u32),
@@ -21,7 +52,11 @@ impl fmt::Display for FieldLabel {
         match self {
             FieldLabel::InPattern(i) => write!(f, "in_{}", i),
             FieldLabel::OutPattern(i) => write!(f, "out_{}", i),
-            FieldLabel::DerefPattern { size: base, offset, bound } => {
+            FieldLabel::DerefPattern {
+                size: base,
+                offset,
+                bound,
+            } => {
                 write!(f, "σ{}@{}", base, offset)?;
                 if let Some(b) = bound {
                     write!(f, "{}", b)
@@ -38,6 +73,22 @@ impl fmt::Display for FieldLabel {
 impl Debug for FieldLabel {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self)
+    }
+}
+
+impl FieldLabel {
+    pub fn variance(&self) -> Variance {
+        match self {
+            FieldLabel::InPattern(_) => Variance::Contravariant,
+            FieldLabel::OutPattern(_) => Variance::Covariant,
+            FieldLabel::DerefPattern {
+                size: _,
+                offset: _,
+                bound: _,
+            } => Variance::Covariant,
+            FieldLabel::Load => Variance::Covariant,
+            FieldLabel::Store => Variance::Contravariant,
+        }
     }
 }
 
@@ -93,6 +144,13 @@ impl DerivedTypeVariable {
             name: self.name.clone(),
             fields: self.fields[..index].to_vec(),
         }
+    }
+    pub fn path_variance(&self) -> Variance {
+        let mut variance = Variance::Covariant;
+        for field in &self.fields {
+            variance = variance.combine(&field.variance());
+        }
+        variance
     }
 }
 
