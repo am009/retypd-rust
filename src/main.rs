@@ -4,7 +4,8 @@ use parser::constraints_from_json;
 pub mod parser;
 pub mod schema;
 pub mod solver;
-mod sketches;
+pub mod sketches;
+pub mod graph;
 
 use solver::Solver;
 

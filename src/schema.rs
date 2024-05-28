@@ -175,12 +175,10 @@ impl Debug for Constraint {
 pub struct Program {
     pub language: String,
     // types: Lattice[DerivedTypeVariable],
+    /// types for global variables
     // global_vars: Iterable[MaybeVar],
-    // proc_constraints: MaybeDict[MaybeVar, ConstraintSet],
-    // callgraph: Union[
-    //     MaybeDict[MaybeVar, Iterable[MaybeVar]], networkx.DiGraph
-    // ],
     // TODO: save function name string space
+    // initial constraints for each function.
     pub proc_constraints: HashMap<String, Vec<Constraint>>,
     pub call_graph: DiGraph<String, ()>,
 }
