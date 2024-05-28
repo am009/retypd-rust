@@ -1,7 +1,10 @@
-use std::{collections::HashMap, fmt::Debug, fs::File, io::Write};
+use std::{collections::HashMap, env, fmt::Debug, fs::File, io::Write};
 
 use petgraph::{
-    algo::{condensation, toposort}, dot::Dot, graph::{DiGraph, NodeIndex}, visit::{EdgeRef, IntoEdgesDirected}
+    algo::{condensation, toposort},
+    dot::Dot,
+    graph::{DiGraph, NodeIndex},
+    visit::{EdgeRef, IntoEdgesDirected},
 };
 
 use crate::schema::{Constraint, DerivedTypeVariable, FieldLabel, Program};
@@ -82,8 +85,18 @@ impl Solver<'_> {
                             || (label_x == &FieldLabel::Load && label_y == &FieldLabel::Store)
                             || (label_x == &FieldLabel::Store && label_y == &FieldLabel::Load)
                         {
-                            log::debug!("Unify: there is a edge from {:?} to {:?} with label {:?}", g.node_weight(edge_x.source()), g.node_weight(edge_x.target()), label_x);
-                            log::debug!("And a edge from {:?} to {:?} with label {:?}", g.node_weight(edge_y.source()), g.node_weight(edge_y.target()), label_y);
+                            log::debug!(
+                                "Unify: there is a edge from {:?} to {:?} with label {:?}",
+                                g.node_weight(edge_x.source()),
+                                g.node_weight(edge_x.target()),
+                                label_x
+                            );
+                            log::debug!(
+                                "And a edge from {:?} to {:?} with label {:?}",
+                                g.node_weight(edge_y.source()),
+                                g.node_weight(edge_y.target()),
+                                label_y
+                            );
                             let node_x = edge_x.target();
                             let node_y = edge_y.target();
                             to_unify.push((node_x, node_y));
@@ -147,7 +160,10 @@ impl Solver<'_> {
                             find_equiv_group(&mut g, gm.get(&dtv_r).unwrap().clone())
                         };
                         // create edge with field label i, if not exist
-                        if !g.edges_connecting(node_id, new_node_id).any(|edge| edge.weight() == &c.fields[i - 1]) {
+                        if !g
+                            .edges_connecting(node_id, new_node_id)
+                            .any(|edge| edge.weight() == &c.fields[i - 1])
+                        {
                             g.add_edge(node_id, new_node_id, c.fields[i - 1].clone());
                         }
                         prev_id = Some(new_node_id);
@@ -156,9 +172,11 @@ impl Solver<'_> {
             }
         }
 
-        // write to file
-        let mut file = File::create("/tmp/g.dot").unwrap();
-        write!(file, "{:?}", Dot::new(&g)).unwrap();
+        // print the graph for debugging
+        if let Some(g_path) = env::var("DEBUG_G_GRAPH").ok() {
+            let mut file = File::create(g_path).unwrap();
+            write!(file, "{:?}", Dot::new(&g)).unwrap();
+        }
 
         for (_, cons) in &self.program.proc_constraints {
             for c in cons {
@@ -183,7 +201,9 @@ impl Solver<'_> {
                 let node = g_quotient.add_node(vec);
                 gm_quotient.insert(rep, node);
             } else {
-                let node2 = g_quotient.node_weight_mut(gm_quotient.get(&rep).unwrap().clone()).unwrap();
+                let node2 = g_quotient
+                    .node_weight_mut(gm_quotient.get(&rep).unwrap().clone())
+                    .unwrap();
                 node2.push(node.dtv.clone());
             }
         }
@@ -196,11 +216,17 @@ impl Solver<'_> {
             let source_quotient = gm_quotient.get(&source_rep).unwrap();
             let target_quotient = gm_quotient.get(&target_rep).unwrap();
             let edge = g.edge_weight(ind).unwrap();
-            g_quotient.add_edge(source_quotient.clone(), target_quotient.clone(), edge.clone());
+            g_quotient.add_edge(
+                source_quotient.clone(),
+                target_quotient.clone(),
+                edge.clone(),
+            );
         }
-        // write to file
-        let mut file = File::create("/tmp/g_quotient.dot").unwrap();
-        write!(file, "{:?}", Dot::new(&g_quotient)).unwrap();
 
+        // print the graph for debugging
+        if let Some(g_quotient_path) = env::var("DEBUG_G_QUOTIENT_GRAPH").ok() {
+            let mut file = File::create(g_quotient_path).unwrap();
+            write!(file, "{:?}", Dot::new(&g_quotient)).unwrap();
+        }
     }
 }
