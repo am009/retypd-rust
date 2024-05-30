@@ -21,7 +21,11 @@
             },
             "args": [],
             "cwd": "${workspaceFolder}",
-            "env": {"RUST_LOG": "debug"}
+            "env": {
+                "RUST_LOG": "debug",
+                // "DEBUG_TRANS_INIT_GRAPH": "initial.dot",
+                "DEBUG_TRANS_SAT_GRAPH": "sated.dot"
+            }
         },
         {
             "type": "lldb",

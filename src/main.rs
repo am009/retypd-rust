@@ -16,5 +16,5 @@ fn main() {
         .get_matches();
     let program = constraints_from_json(matches.get_one::<String>("json_in").unwrap()).unwrap();
     let solver = Solver::new(&program);
-    solver.infer_shapes();
+    solver.solve();
 }

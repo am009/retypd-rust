@@ -160,7 +160,7 @@ fn parse_derived_type_variable(input: &str) -> IResult<&str, DerivedTypeVariable
     )(input)
 }
 
-fn parse_constraint(input: &str) -> IResult<&str, Constraint> {
+pub fn parse_constraint(input: &str) -> IResult<&str, Constraint> {
     map(
         tuple((
             parse_derived_type_variable,
