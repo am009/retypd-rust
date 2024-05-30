@@ -30,7 +30,7 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in executable 'retypd-rust'",
+            "name": "test_saturation",
             "cargo": {
                 "args": [
                     "test",
@@ -43,8 +43,9 @@
                     "kind": "bin"
                 }
             },
-            "args": [],
-            "cwd": "${workspaceFolder}"
+            "args": ["--nocapture", "test_saturation"],
+            "cwd": "${workspaceFolder}",
+            "env": {"RUST_LOG": "debug"}
         }
     ]
 }

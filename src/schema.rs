@@ -36,8 +36,8 @@ impl Variance {
 
 #[derive(PartialEq, Eq, Hash, Clone)]
 pub enum FieldLabel {
-    InPattern(u32),
-    OutPattern(u32),
+    InPattern(String),
+    OutPattern(String),
     DerefPattern {
         size: u32,
         offset: i32,

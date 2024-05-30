@@ -79,19 +79,19 @@ fn parse_i32(input: &str) -> IResult<&str, i32> {
     Ok((i, number))
 }
 
-fn is_not_whitespace_or_dot(c: char) -> bool {
-    !c.is_whitespace() && c != '.'
+fn is_not_seperator(c: char) -> bool {
+    !c.is_whitespace() && c != '.' && c != '<' && c != '=' && c != '⊑'
 }
 
 fn parse_identifier(input: &str) -> IResult<&str, String> {
-    map(take_while1(is_not_whitespace_or_dot), |s: &str| {
+    map(take_while1(is_not_seperator), |s: &str| {
         s.to_string()
     })(input)
 }
 
 fn parse_in_pattern(input: &str) -> IResult<&str, FieldLabel> {
     map(
-        preceded(tag("in_"), map_res(digit1, |s: &str| s.parse::<u32>())),
+        preceded(tag("in_"), parse_identifier),
         FieldLabel::InPattern,
     )(input)
 }
@@ -99,10 +99,10 @@ fn parse_in_pattern(input: &str) -> IResult<&str, FieldLabel> {
 fn parse_out_pattern(input: &str) -> IResult<&str, FieldLabel> {
     alt((
         map(
-            preceded(tag("out_"), map_res(digit1, |s: &str| s.parse::<u32>())),
+            preceded(tag("out_"), parse_identifier),
             FieldLabel::OutPattern,
         ),
-        map(tag("out"), |_| FieldLabel::OutPattern(0)),
+        map(tag("out"), |_| FieldLabel::OutPattern("".to_string())),
     ))(input)
 }
 
@@ -147,7 +147,7 @@ fn parse_field_label(input: &str) -> IResult<&str, FieldLabel> {
     ))(input)
 }
 
-fn parse_derived_type_variable(input: &str) -> IResult<&str, DerivedTypeVariable> {
+pub fn parse_derived_type_variable(input: &str) -> IResult<&str, DerivedTypeVariable> {
     map(
         pair(
             parse_identifier,
